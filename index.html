@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>小山 奎 ポートフォリオ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="衛星の船舶位置データ（AIS）とRで、漁業の操業行動を分析しています。東北大学大学院 環境科学研究科 小山奎のポートフォリオ。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap">
+<style>
+html{color-scheme:light}body{margin:0}img{max-width:100%}
+/* Layout: one reading column like a survey log; each project is a "station" with a coordinate tag, facts in a two-column ledger. */
+:root {
+  --bg: #f2f5f6;
+  --panel: #ffffff;
+  --tint: #e2eef2;
+  --fg: #13222a;
+  --muted: #586a72;
+  --line: #d3dee2;
+  --accent: #0d6680;
+  --code-bg: #e9f0f2;
+  --display: "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  --body: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c151a; --panel: #111e24; --tint: #14262e; --fg: #e2ebee; --muted: #93a6ae;
+    --line: #233540; --accent: #62bcd8; --code-bg: #0f1b21; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c151a; --panel: #111e24; --tint: #14262e; --fg: #e2ebee; --muted: #93a6ae;
+  --line: #233540; --accent: #62bcd8; --code-bg: #0f1b21; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--body); font-size: 16px; line-height: 1.85;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0;
+}
+.wrap { max-width: 760px; margin: 0 auto; padding-block: 56px 72px; display: grid; gap: 72px; }
+a { color: var(--accent); text-underline-offset: 3px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.35; margin: 0; }
+p { margin: 0; }
+.tag { font-family: var(--mono); font-size: 12.5px; letter-spacing: .06em; color: var(--muted); }
+
+/* hero */
+header { display: grid; gap: 20px; }
+header h1 { font-size: clamp(34px, 7vw, 48px); font-weight: 900; letter-spacing: .02em; }
+header h1 span { display: block; font-family: var(--mono); font-weight: 500; font-size: 15px; letter-spacing: .12em; color: var(--muted); margin-top: 6px; }
+.lead { font-size: 18.5px; max-width: 34em; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 14.5px; color: var(--muted); }
+.meta b { color: var(--fg); font-weight: 500; }
+
+/* section heads */
+section { display: grid; gap: 24px; }
+.sec-head { display: grid; gap: 4px; border-top: 1px solid var(--line); padding-top: 18px; }
+.sec-head h2 { font-size: 24px; }
+
+/* skills */
+.skills { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.skill { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 16px 18px; display: grid; gap: 6px; align-content: start; min-width: 0; }
+.skill h3 { font-family: var(--mono); font-size: 15px; font-weight: 500; color: var(--accent); }
+.skill p { font-size: 14.5px; line-height: 1.7; }
+
+/* flow */
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+.step { flex: 1 1 130px; min-width: 0; background: var(--tint); border-radius: 6px; padding: 12px 14px; display: grid; gap: 2px; align-content: start; }
+.step b { font-size: 14.5px; }
+.step small { font-family: var(--mono); font-size: 12px; color: var(--muted); line-height: 1.5; }
+.flow-note { font-size: 14.5px; color: var(--muted); }
+
+/* projects */
+.project { display: grid; gap: 18px; }
+.project + .project { border-top: 1px dashed var(--line); padding-top: 40px; }
+.project h3 { font-size: 21px; }
+.status { display: inline-block; font-size: 12.5px; padding: 2px 10px; border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; }
+.ledger { display: grid; grid-template-columns: 7.5em 1fr; gap: 10px 18px; margin: 0; font-size: 15.5px; }
+.ledger dt { color: var(--muted); font-size: 14px; padding-top: 2px; }
+.ledger dd { margin: 0; min-width: 0; }
+.ledger ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+@media (max-width: 520px) {
+  .ledger { grid-template-columns: 1fr; gap: 2px; }
+  .ledger dd { margin-bottom: 12px; }
+}
+figure { margin: 0; display: grid; gap: 8px; }
+figure img { width: 100%; max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+figcaption { font-size: 13.5px; color: var(--muted); }
+.code { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; overflow-x: auto; }
+.code pre { margin: 0; padding: 16px 18px; font-family: var(--mono); font-size: 12.8px; line-height: 1.65; color: var(--fg); }
+.code .c { color: var(--muted); }
+.code-label { font-size: 13.5px; color: var(--muted); }
+.eq { font-family: var(--mono); font-size: 14px; background: var(--code-bg); border-radius: 6px; padding: 12px 16px; overflow-x: auto; white-space: nowrap; }
+.private { font-size: 14.5px; background: var(--tint); border-radius: 6px; padding: 12px 16px; }
+
+footer { border-top: 1px solid var(--line); padding-top: 18px; font-size: 13px; color: var(--muted); display: grid; gap: 6px; }
+@media (prefers-reduced-motion: no-preference) { a { transition: color .15s; } }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="tag">43.9°N 145.4°E ／ AIS × FISHERIES</div>
+  <h1>小山 奎<span>KEI OYAMA</span></h1>
+  <p class="lead">漁船が発信する位置情報（AIS）を衛星経由で集めたデータを使い、漁業の「見えていなかった動き」を数字にする研究をしています。</p>
+  <div class="meta">
+    <span><b>東北大学大学院</b> 環境科学研究科 博士前期課程</span>
+    <span><b>交換留学</b> テキサス大学オースティン校（2025.8–2026.5）</span>
+    <span><b>GitHub</b> <a href="https://github.com/oyamakeiZ" target="_blank" rel="noopener">oyamakeiZ</a></span>
+  </div>
+</header>
+
+<section aria-labelledby="skills">
+  <div class="sec-head"><span class="tag">SKILLS</span><h2 id="skills">使っている道具</h2></div>
+  <div class="skills">
+    <div class="skill"><h3>R / tidyverse</h3><p>データの整形・集計・可視化。分析はすべてRで書いています。</p></div>
+    <div class="skill"><h3>sf</h3><p>地図データの処理。海域のポリゴンを自分で作り、船の位置がどの海域に入るかを判定します。</p></div>
+    <div class="skill"><h3>sparklyr / arrow</h3><p>数十GBの日次データから、対象の船だけをSparkで取り出し、Parquet形式で軽く保存します。</p></div>
+    <div class="skill"><h3>fixest</h3><p>パネルデータの固定効果モデル。船ごとの違いや季節の影響を取り除いて推定します。</p></div>
+    <div class="skill"><h3>Quarto</h3><p>コード・図表・文章を1つのファイルにまとめ、誰でも同じ結果を再現できるレポートにします。</p></div>
+    <div class="skill"><h3>Git / GitHub</h3><p>研究室のチームでコードを共有し、変更の履歴を管理しています。</p></div>
+  </div>
+</section>
+
+<section aria-labelledby="flow">
+  <div class="sec-head"><span class="tag">PIPELINE</span><h2 id="flow">分析の流れ</h2></div>
+  <div class="flow" role="list">
+    <div class="step" role="listitem"><b>日次AISデータ</b><small>Global Fishing Watch<br>全世界・2012年〜</small></div>
+    <div class="step" role="listitem"><b>対象の船を抽出</b><small>Spark で絞り込み<br>→ Parquet 保存</small></div>
+    <div class="step" role="listitem"><b>海域を判定</b><small>sf でポリゴンと<br>位置を照合</small></div>
+    <div class="step" role="listitem"><b>集計・推定</b><small>tidyverse / fixest</small></div>
+    <div class="step" role="listitem"><b>レポート</b><small>Quarto で HTML に</small></div>
+  </div>
+  <p class="flow-note">研究室の共有ドライブにある全世界の日次データ（約69GB）を毎回読むと時間がかかるため、最初に対象の船だけを取り出して保存し、2回目以降はその小さなファイルだけを読むようにしています。すでに作ったファイルがあれば重い処理を飛ばす仕組みも入れています。</p>
+</section>
+
+<section aria-labelledby="projects">
+  <div class="sec-head"><span class="tag">PROJECTS</span><h2 id="projects">研究</h2></div>
+
+  <article class="project">
+    <div class="tag">01 ／ 根室海峡 ／ 2026–</div>
+    <h3>根室海峡のロシアのトロール漁船を、公開データで「見える化」する</h3>
+    <div><span class="status">論文投稿の準備中</span></div>
+    <dl class="ledger">
+      <dt>問い</dt>
+      <dd>北海道と国後島の間の根室海峡では、スケトウダラを日本とロシアが一緒に利用しています。ところが日本の資源評価では、ロシア側の漁獲量や操業の量は「不明」とされています。公開されている衛星データから、ロシア船の操業を数字で示せないかを調べています。</dd>
+      <dt>データ</dt>
+      <dd>Global Fishing Watch の AIS データ（2018–2025年）、衛星レーダー画像（Sentinel-1 SAR）による船の検出、地元の目視記録</dd>
+      <dt>工夫した点</dt>
+      <dd><ul>
+        <li>「根室海峡」の範囲を、海上保安庁の定義に合わせて4つの岬の位置から自分で作図しました（下の図）。</li>
+        <li>操業が増えたように見えるのが、AISの受信状況が良くなっただけではないかを確かめました。</li>
+        <li>AISを切っている船がいないかを、衛星レーダーや地元の記録と照らし合わせて検証しました。</li>
+        <li>主な船の1日ごとの航跡を追い、海峡の外ではどこで操業しているかも調べました。</li>
+      </ul></dd>
+    </dl>
+    <figure>
+      <img src="assets/nemuro_strait_area.png" alt="根室海峡の分析範囲。知床岬とルルイ岬を結ぶ北口、ケラムイ埼と納沙布岬を結ぶ南口、国後島の中心線で囲まれた海域を青で塗った地図" width="1200" height="900" loading="lazy">
+      <figcaption>分析範囲の地図。北口（知床岬–ルルイ岬）と南口（ケラムイ埼–納沙布岬）を結び、国後島の中心線より西側の海だけを残しています。地図データ：Natural Earth</figcaption>
+    </figure>
+    <p class="code-label">上の範囲を作るコードの一部（R・sf）</p>
+    <div class="code"><pre><span class="c"># 国後島の中心線：0.02度ごとに、島の東西の端の中点をとる</span>
+kuna_lats &lt;- seq(cape_keramui[["Y"]] + 0.01, cape_ruruy[["Y"]], by = 0.02)
+kuna_mid  &lt;- map_dbl(kuna_lats, function(y) {
+  line &lt;- st_sfc(st_linestring(rbind(c(xmin, y), c(xmax, y))), crs = 4326)
+  x &lt;- st_intersection(line, kunashiri)
+  if (length(x) == 0) NA_real_ else mean(st_bbox(x)[c("xmin", "xmax")])
+})
+
+<span class="c"># 北口 → 国後島の中心線 → 南口 → 北海道の内陸 で囲み、陸地を除く</span>
+strait_pieces &lt;- st_sfc(st_polygon(list(strait_outline)), crs = 4326) |&gt;
+  st_make_valid() |&gt;
+  st_difference(land_sf) |&gt;
+  st_cast("POLYGON")
+
+<span class="c"># 海峡の中央（145.4°E, 43.9°N）を含む海域だけを残す</span>
+center      &lt;- st_sfc(st_point(c(145.4, 43.9)), crs = 4326)
+area_strait &lt;- strait_pieces[st_intersects(strait_pieces, center, sparse = FALSE)[, 1]]</pre></div>
+    <p class="private">結果の数字や図は、論文を投稿する前のためここには載せていません。面接などでは、分析レポートをお見せしながら説明できます。</p>
+  </article>
+
+  <article class="project">
+    <div class="tag">02 ／ 修士論文 ／ 2026–</div>
+    <h3>燃料価格が上がると、遠洋の漁船は動き方を変えるのか</h3>
+    <div><span class="status">データの準備中</span></div>
+    <dl class="ledger">
+      <dt>問い</dt>
+      <dd>遠くの海でマグロなどをとる延縄漁船にとって、燃料代は大きな負担です。原油価格が上がったとき、船は速度を落としたり、近い漁場に移ったりするのかを調べます。</dd>
+      <dt>データ</dt>
+      <dd>日本・台湾・韓国の遠洋延縄漁船の AIS データ（2018–2024年）、国際原油価格（Brent）</dd>
+      <dt>方法</dt>
+      <dd>もともと遠くで操業していた船ほど燃料価格の影響を強く受ける、という差を使います。船ごとの違いと、国×月ごとの違い（補助金・為替・季節など）を固定効果で取り除いて推定します。</dd>
+    </dl>
+    <div class="eq">Y<sub>ict</sub> = β · (原油価格<sub>t</sub> × 平常時の操業距離<sub>i</sub>) + 船の固定効果<sub>i</sub> + 国×月の固定効果<sub>ct</sub> + ε<sub>ict</sub></div>
+  </article>
+
+  <article class="project">
+    <div class="tag">03 ／ 卒業研究 ／ 2025</div>
+    <h3>日本のEEZ（排他的経済水域）で操業するロシア漁船の分布</h3>
+    <dl class="ledger">
+      <dt>やったこと</dt>
+      <dd>領海・内水・EEZなどの地図データを組み合わせて日本のEEZのポリゴンを作り、ロシア船籍の漁船の位置がその中にあるかを判定しました。年ごと・船の種類ごと・トン数ごとに操業時間を集計し、1度ごとのマス目で地図にしました。岩手県の沖合底びき網漁船の操業データとも重ねて比べています。</dd>
+      <dt>使った道具</dt>
+      <dd>R（sf, sparklyr, arrow, ggplot2）</dd>
+    </dl>
+  </article>
+</section>
+
+<footer>
+  <p>AIS データ：Global Fishing Watch（globalfishingwatch.org）。地図データ：Natural Earth。</p>
+  <p>© 2026 小山 奎</p>
+</footer>
+
+</div>
+</body>
+</html>
